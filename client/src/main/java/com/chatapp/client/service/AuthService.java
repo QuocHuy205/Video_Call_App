@@ -28,9 +28,7 @@ public class AuthService {
     }
 
     public Packet login(String username, String password) throws Exception {
-        if (!connection.isConnected()) {
-            connection.connect("localhost", 8888);
-        }
+        System.out.println("[AUTH] Login attempt: " + username);
 
         Packet request = PacketBuilder.create(MessageType.LOGIN_REQUEST)
                 .put("username", username)
@@ -40,16 +38,23 @@ public class AuthService {
         Packet response = connection.sendAndReceive(request);
 
         if (response.isSuccess()) {
-            System.out.println("[AUTH] Login successful");
+            currentUser = new User();
+            currentUser.setId(response.getLong("userId"));
+            currentUser.setUsername(response.getString("username"));
+            currentUser.setEmail(response.getString("email"));
+            currentUser.setFullName(response.getString("fullName"));
+
+            PreferenceManager.getInstance().setCurrentUser(currentUser);
+            System.out.println("[AUTH] Login successful: " + currentUser.getUsername());
+        } else {
+            System.out.println("[AUTH] Login failed: " + response.getError());
         }
 
         return response;
     }
 
     public Packet register(String username, String email, String password, String fullName) throws Exception {
-        if (!connection.isConnected()) {
-            connection.connect("localhost", 8888);
-        }
+        System.out.println("[AUTH] Registration attempt: " + username);
 
         Packet request = PacketBuilder.create(MessageType.REGISTER_REQUEST)
                 .put("username", username)
@@ -62,6 +67,8 @@ public class AuthService {
 
         if (response.isSuccess()) {
             System.out.println("[AUTH] Registration successful");
+        } else {
+            System.out.println("[AUTH] Registration failed: " + response.getError());
         }
 
         return response;

@@ -9,6 +9,7 @@ import java.util.prefs.Preferences;
 public class PreferenceManager {
     private static PreferenceManager instance;
     private final Preferences prefs;
+    private User currentUser;
 
     // Keys
     private static final String KEY_USER_ID = "user_id";
@@ -153,5 +154,8 @@ public class PreferenceManager {
         } catch (Exception e) {
             System.err.println("[PREFS] Error clearing preferences: " + e.getMessage());
         }
+    }
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
     }
 }

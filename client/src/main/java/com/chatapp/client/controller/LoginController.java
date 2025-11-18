@@ -2,7 +2,6 @@ package com.chatapp.client.controller;
 
 import com.chatapp.client.network.ServerConnection;
 import com.chatapp.client.service.AuthService;
-import com.chatapp.common.model.User;
 import com.chatapp.common.protocol.Packet;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -13,7 +12,6 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.util.Map;
 
 public class LoginController {
     @FXML private TextField usernameField;
@@ -63,28 +61,6 @@ public class LoginController {
                 Packet response = authService.login(username, password);
                 Platform.runLater(() -> {
                     if (response.isSuccess()) {
-
-                        // Sau khi response.isSuccess()
-                        if (response.isSuccess()) {
-                            // ✅ Parse user data
-                            Object userData = response.get("user");
-                            if (userData instanceof Map) {
-                                Map<String, Object> userMap = (Map<String, Object>) userData;
-
-                                User user = new User();
-                                user.setId(((Number) userMap.get("id")).longValue());
-                                user.setUsername((String) userMap.get("username"));
-                                user.setEmail((String) userMap.get("email"));
-                                user.setFullName((String) userMap.get("fullName"));
-                                user.setStatusType(User.UserStatus.valueOf(userMap.get("statusType").toString()));
-
-                                // ✅ CRITICAL: Set current user
-                                authService.setCurrentUser(user);
-                                System.out.println("[LOGIN] User set: " + user.getUsername());
-                            }
-
-                            showMainWindow();
-                        }
                         showMainWindow();
                     } else {
                         showError(response.getError());
@@ -122,10 +98,10 @@ public class LoginController {
         }
     }
 
-    @FXML
-    private void handleForgotPassword() {
-        showInfo("Chức năng đang phát triển");
-    }
+//    @FXML
+//    private void handleForgotPassword() {
+//        showInfo("Chức năng đang phát triển");
+//    }
 
     private void showMainWindow() {
         try {
@@ -165,5 +141,24 @@ public class LoginController {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    // Open Forgot Password window
+    @FXML
+    private void handleForgotPassword() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/forgot_password.fxml"));
+            loader.setController(new ForgotPasswordController()); // THÊM DÒNG NÀY
+            Parent root = loader.load();
+
+            Stage stage = (Stage) loginButton.getScene().getWindow();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/css/auth.css").toExternalForm());
+            stage.setScene(scene);
+            stage.setTitle("Quên mật khẩu");
+            stage.centerOnScreen();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

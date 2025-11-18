@@ -2,11 +2,18 @@ package com.chatapp.server.database.dao;
 
 import com.chatapp.common.model.User;
 import com.chatapp.server.database.DatabaseManager;
+import com.chatapp.server.util.Logger;
 
 import java.sql.*;
 import java.time.LocalDateTime;
 
 public class UserDAO {
+    private final Logger logger = Logger.getInstance();
+    private final DatabaseManager dbManager;
+
+    public UserDAO() {
+        this.dbManager = DatabaseManager.getInstance();
+    }
 
     /**
      * Insert new user
@@ -36,72 +43,10 @@ public class UserDAO {
     }
 
     /**
-     * Update user profile information
-     */
-    public void update(User user) throws SQLException {
-        String sql = "UPDATE users SET full_name = ?, email = ?, status_message = ?, " +
-                "status_type = ?, avatar_url = ? WHERE id = ?";
-
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, user.getFullName());
-            stmt.setString(2, user.getEmail());
-            stmt.setString(3, user.getStatusMessage());
-            stmt.setString(4, user.getStatusType().name());
-            stmt.setString(5, user.getAvatarUrl());
-            stmt.setLong(6, user.getId());
-
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected == 0) {
-                throw new SQLException("Update failed, user not found with id: " + user.getId());
-            }
-        }
-    }
-
-    /**
-     * Update user password
-     */
-    public void updatePassword(Long userId, String newPasswordHash) throws SQLException {
-        String sql = "UPDATE users SET password_hash = ? WHERE id = ?";
-
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, newPasswordHash);
-            stmt.setLong(2, userId);
-
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected == 0) {
-                throw new SQLException("Password update failed, user not found with id: " + userId);
-            }
-        }
-    }
-
-    /**
-     * Update avatar URL
-     */
-    public void updateAvatar(Long userId, String avatarUrl) throws SQLException {
-        String sql = "UPDATE users SET avatar_url = ? WHERE id = ?";
-
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, avatarUrl);
-            stmt.setLong(2, userId);
-
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected == 0) {
-                throw new SQLException("Avatar update failed, user not found with id: " + userId);
-            }
-        }
-    }
-
-    /**
      * Find user by username
      */
     public User findByUsername(String username) throws SQLException {
-        String sql = "SELECT * FROM users WHERE username = ? AND is_active = TRUE";
+        String sql = "SELECT * FROM users WHERE username = ? AND is_active = TRUE ";
 
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -117,15 +62,15 @@ public class UserDAO {
     }
 
     /**
-     * Find user by ID
+     * Find user by username
      */
-    public User findById(Long id) throws SQLException {
-        String sql = "SELECT * FROM users WHERE id = ? AND is_active = TRUE";
+    public User findByEmail(String username) throws SQLException {
+        String sql = "SELECT * FROM users WHERE email = ?";
 
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setLong(1, id);
+            stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
@@ -135,16 +80,17 @@ public class UserDAO {
         }
     }
 
+
     /**
-     * Find user by email
+     * Find user by ID
      */
-    public User findByEmail(String email) throws SQLException {
-        String sql = "SELECT * FROM users WHERE email = ? AND is_active = TRUE";
+    public User findById(Long id) throws SQLException {
+        String sql = "SELECT * FROM users WHERE id = ? AND is_active = TRUE";
 
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, email);
+            stmt.setLong(1, id);
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
@@ -196,7 +142,7 @@ public class UserDAO {
      * Update user status
      */
     public void updateStatus(Long userId, User.UserStatus status, String ipAddress, Integer port) throws SQLException {
-        String sql = "UPDATE users SET status_type = ?, ip_address = ?, port = ?, last_seen = NOW() WHERE id = ?";
+        String sql = "UPDATE users SET status_type = ?, ip_address = ?, port = ? WHERE id = ?";
 
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -211,6 +157,80 @@ public class UserDAO {
             stmt.setLong(4, userId);
 
             stmt.executeUpdate();
+        }
+    }
+    /**
+     * Update user profile information
+     */
+    public void update(User user) throws SQLException {
+        String sql = "UPDATE users SET full_name = ?, email = ?, status_message = ?, " +
+                "status_type = ?, avatar_url = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, user.getFullName());
+            stmt.setString(2, user.getEmail());
+            stmt.setString(3, user.getStatusMessage());
+            stmt.setString(4, user.getStatusType().name());
+            stmt.setString(5, user.getAvatarUrl());
+            stmt.setLong(6, user.getId());
+
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new SQLException("Update failed, user not found with id: " + user.getId());
+            }
+        }
+    }
+
+    /**
+     * Update user password
+     */
+    public void updatePassword(Long userId, String newPasswordHash) throws SQLException {
+        String sql = "UPDATE users SET password_hash = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, newPasswordHash);
+            stmt.setLong(2, userId);
+
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new SQLException("Password update failed, user not found with id: " + userId);
+            }
+        }
+    }
+
+    public boolean updatePasswordLogin(long userId, String passwordHash) {
+        String sql = "UPDATE users SET password_hash = ? WHERE id = ?";
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, passwordHash);
+            ps.setLong(2, userId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            logger.error("Update password error: " + e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Update avatar URL
+     */
+    public void updateAvatar(Long userId, String avatarUrl) throws SQLException {
+        String sql = "UPDATE users SET avatar_url = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, avatarUrl);
+            stmt.setLong(2, userId);
+
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new SQLException("Avatar update failed, user not found with id: " + userId);
+            }
         }
     }
 
@@ -276,7 +296,105 @@ public class UserDAO {
         }
 
         user.setActive(rs.getBoolean("is_active"));
+        user.setverified(rs.getBoolean("is_verified"));
 
         return user;
     }
+    /**
+     * Xác thực user (đặt is_verified = 1)
+     */
+    public boolean verifyUser(long userId) {
+        String sql = "UPDATE users SET is_verified = 1 WHERE id = ?";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setLong(1, userId);
+            int rowsAffected = pstmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("✓ Xác thực user thành công (ID: " + userId + ")");
+                return true;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("✗ Lỗi xác thực user: " + e.getMessage());
+        }
+
+        return false;
+    }
+    /**
+     * Kiểm tra user đã được xác thực chưa
+     */
+    public boolean isUserVerified(long userId) {
+        String sql = "SELECT is_verified FROM users WHERE id = ?";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setLong(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("is_verified") == 1;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("✗ Lỗi kiểm tra xác thực: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+    /**
+     * Lấy email của user
+     */
+    public String getUserEmail(long userId) {
+        String sql = "SELECT email FROM users WHERE id = ?";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setLong(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getString("email");
+            }
+
+        } catch (SQLException e) {
+            System.err.println("✗ Lỗi lấy email: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    public long createUserWithConn(Connection conn, String username, String email, String passwordHash, String fullName) throws SQLException {
+        String sql = "INSERT INTO users (username, email, password_hash, full_name, is_verified, is_active, created_at) " +
+                "VALUES (?, ?, ?, ?, 0, 1, CURRENT_TIMESTAMP)";
+        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, username);
+            ps.setString(2, email);
+            ps.setString(3, passwordHash);
+            ps.setString(4, fullName);
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                return rs.next() ? rs.getLong(1) : -1;
+            }
+        }
+    }
+
+    public boolean updatePassword(long userId, String passwordHash) {
+        String sql = "UPDATE users SET password_hash = ? WHERE id = ?";
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, passwordHash);
+            ps.setLong(2, userId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            logger.error("Update password error: " + e.getMessage(), e);
+            return false;
+        }
+    }
+
 }
